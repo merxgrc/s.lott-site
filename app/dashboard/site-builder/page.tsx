@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,15 +10,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Save, Eye, Palette, Type, ImageIcon, Phone, Plus, Trash2, Upload } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { supabase } from "@/lib/supabase"
+import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 export default function SiteBuilderPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const { toast } = useToast()
+  const router = useRouter()
   const [siteData, setSiteData] = useState({
-    businessName: "Bella's Beauty Studio",
+    businessName: "Steph's Beauty Studio",
     tagline: "Luxury Skincare & Esthetics",
     description: "Transform your skin with our premium facial treatments and personalized skincare solutions.",
-    owner: "Isabella Rodriguez",
+    owner: "Stephanie Lott",
     phone: "(555) 123-4567",
-    email: "hello@bellasbeauty.com",
+    email: "hello@stephsbeauty.com",
     address: "123 Beauty Lane, Downtown City, CA 90210",
     hours: {
       Monday: "9:00 AM - 7:00 PM",
@@ -56,15 +63,155 @@ export default function SiteBuilderPage() {
 
   const [activeTab, setActiveTab] = useState("content")
   const [previewMode, setPreviewMode] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleSave = () => {
-    // TODO: Save to Supabase
-    console.log("Saving site data:", siteData)
+  useEffect(() => {
+    const loadSiteData = async () => {
+      try {
+        setIsInitialLoading(true)
+        
+        // Get the current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError) throw userError
+        if (!user) throw new Error("Not authenticated")
+
+        // Get the user's site
+        const { data: site, error: siteError } = await supabase
+          .from("sites")
+          .select("*")
+          .eq("user_id", user.id)
+          .single()
+
+        if (siteError && siteError.code !== "PGRST116") throw siteError // PGRST116 is "no rows returned"
+
+        if (site) {
+          setSiteData({
+            ...site.site_data,
+            isPublished: site.is_published,
+          })
+        }
+      } catch (error) {
+        console.error("Error loading site data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load your site data. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsInitialLoading(false)
+      }
+    }
+
+    loadSiteData()
+  }, [toast])
+
+  const handleSave = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+      if (!user) throw new Error("Not authenticated")
+
+      // Get the user's site
+      const { data: existingSite, error: siteError } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("user_id", user.id)
+        .single()
+
+      if (siteError && siteError.code !== "PGRST116") throw siteError // PGRST116 is "no rows returned"
+
+      if (existingSite) {
+        // Update existing site
+        const { error: updateError } = await supabase
+          .from("sites")
+          .update({
+            site_data: siteData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingSite.id)
+
+        if (updateError) throw updateError
+      } else {
+        // Create new site
+        const { error: insertError } = await supabase
+          .from("sites")
+          .insert([
+            {
+              user_id: user.id,
+              subdomain: siteData.businessName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+              template_id: "elegant", // Default template
+              site_data: siteData,
+              is_published: false,
+            },
+          ])
+
+        if (insertError) throw insertError
+      }
+
+      toast({
+        title: "Success",
+        description: "Your site has been saved successfully.",
+      })
+    } catch (error) {
+      console.error("Error saving site:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save your site. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handlePublish = () => {
-    setSiteData((prev) => ({ ...prev, isPublished: !prev.isPublished }))
-    // TODO: Update published status in database
+  const handlePublish = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+      if (!user) throw new Error("Not authenticated")
+
+      // Get the user's site
+      const { data: site, error: siteError } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("user_id", user.id)
+        .single()
+
+      if (siteError) throw siteError
+
+      // Update published status
+      const { error: updateError } = await supabase
+        .from("sites")
+        .update({
+          is_published: !siteData.isPublished,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", site.id)
+
+      if (updateError) throw updateError
+
+      setSiteData((prev) => ({ ...prev, isPublished: !prev.isPublished }))
+      
+      toast({
+        title: "Success",
+        description: `Your site has been ${siteData.isPublished ? "unpublished" : "published"}.`,
+      })
+    } catch (error) {
+      console.error("Error updating publish status:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update publish status. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const addService = () => {
@@ -94,6 +241,150 @@ export default function SiteBuilderPage() {
       ...prev,
       services: prev.services.map((service, i) => (i === index ? { ...service, [field]: value } : service)),
     }))
+  }
+
+  const handleImageUpload = async (files: FileList) => {
+    try {
+      setIsLoading(true)
+      
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+      if (!user) throw new Error("Not authenticated")
+
+      // Get the user's site
+      const { data: site, error: siteError } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("user_id", user.id)
+        .single()
+
+      if (siteError) throw siteError
+
+      const uploadedUrls: string[] = []
+
+      // Upload each file
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Math.random()}.${fileExt}`
+        const filePath = `${user.id}/${site.id}/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('gallery')
+          .upload(filePath, file)
+
+        if (uploadError) throw uploadError
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('gallery')
+          .getPublicUrl(filePath)
+
+        uploadedUrls.push(publicUrl)
+      }
+
+      // Update site data with new images
+      const updatedGallery = [...(siteData.gallery || []), ...uploadedUrls]
+      setSiteData(prev => ({ ...prev, gallery: updatedGallery }))
+
+      // Save to database
+      const { error: updateError } = await supabase
+        .from("sites")
+        .update({
+          site_data: { ...siteData, gallery: updatedGallery },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", site.id)
+
+      if (updateError) throw updateError
+
+      toast({
+        title: "Success",
+        description: "Images uploaded successfully.",
+      })
+    } catch (error) {
+      console.error("Error uploading images:", error)
+      toast({
+        title: "Error",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRemoveImage = async (index: number) => {
+    try {
+      setIsLoading(true)
+      
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+      if (!user) throw new Error("Not authenticated")
+
+      // Get the user's site
+      const { data: site, error: siteError } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("user_id", user.id)
+        .single()
+
+      if (siteError) throw siteError
+
+      // Remove image from storage
+      const imageUrl = siteData.gallery[index]
+      const filePath = imageUrl.split('/').pop()
+      if (filePath) {
+        const { error: deleteError } = await supabase.storage
+          .from('gallery')
+          .remove([`${user.id}/${site.id}/${filePath}`])
+
+        if (deleteError) throw deleteError
+      }
+
+      // Update site data
+      const updatedGallery = siteData.gallery.filter((_, i) => i !== index)
+      setSiteData(prev => ({ ...prev, gallery: updatedGallery }))
+
+      // Save to database
+      const { error: updateError } = await supabase
+        .from("sites")
+        .update({
+          site_data: { ...siteData, gallery: updatedGallery },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", site.id)
+
+      if (updateError) throw updateError
+
+      toast({
+        title: "Success",
+        description: "Image removed successfully.",
+      })
+    } catch (error) {
+      console.error("Error removing image:", error)
+      toast({
+        title: "Error",
+        description: "Failed to remove image. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isInitialLoading) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your site data...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   if (previewMode) {
@@ -180,12 +471,16 @@ export default function SiteBuilderPage() {
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
-            <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700" disabled={isLoading}>
               <Save className="w-4 h-4 mr-2" />
-              Save Changes
+              {isLoading ? "Saving..." : "Save Changes"}
             </Button>
-            <Button onClick={handlePublish} variant={siteData.isPublished ? "destructive" : "default"}>
-              {siteData.isPublished ? "Unpublish" : "Publish Site"}
+            <Button 
+              onClick={handlePublish} 
+              variant={siteData.isPublished ? "destructive" : "default"}
+              disabled={isLoading}
+            >
+              {isLoading ? "Updating..." : siteData.isPublished ? "Unpublish" : "Publish Site"}
             </Button>
           </div>
         </div>
@@ -390,18 +685,44 @@ export default function SiteBuilderPage() {
                 <CardDescription>Upload and manage your portfolio images</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => e.target.files && handleImageUpload(e.target.files)}
+                />
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-pink-500 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Photos</h3>
                   <p className="text-gray-600 mb-4">Drag and drop your images here, or click to browse</p>
-                  <Button>Choose Files</Button>
+                  <Button disabled={isLoading}>
+                    {isLoading ? "Uploading..." : "Choose Files"}
+                  </Button>
                 </div>
 
-                {/* Placeholder for existing images */}
+                {/* Gallery Grid */}
                 <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-gray-400" />
+                  {siteData.gallery?.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={image}
+                          alt={`Gallery image ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        disabled={isLoading}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>

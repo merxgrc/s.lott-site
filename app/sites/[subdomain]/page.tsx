@@ -13,13 +13,13 @@ import Link from "next/link"
 
 // This would be fetched based on the subdomain
 const siteData = {
-  businessName: "Bella's Beauty Studio",
+  businessName: "Steph's Beauty Studio",
   tagline: "Luxury Skincare & Esthetics",
   description:
     "Transform your skin with our premium facial treatments and personalized skincare solutions. Located in the heart of downtown, we provide a serene escape for your beauty needs.",
-  owner: "Isabella Rodriguez",
+  owner: "/Stephanie Lott",
   phone: "(555) 123-4567",
-  email: "hello@bellasbeauty.com",
+  email: "hello@stephsbeauty.com",
   address: "123 Beauty Lane, Downtown City, CA 90210",
   hours: {
     Monday: "9:00 AM - 7:00 PM",
@@ -31,8 +31,8 @@ const siteData = {
     Sunday: "Closed",
   },
   social: {
-    instagram: "@bellasbeauty",
-    facebook: "bellasbeautystudio",
+    instagram: "@stephssbeauty",
+    facebook: "stephsbeautystudio",
   },
   services: [
     {
