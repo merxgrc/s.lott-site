@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,34 +10,84 @@ import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Palette, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
+  const [formData, setFormData] = useState({
+    businessName: "",
+    fullName: "",
+    email: "",
+    password: ""
+  })
+  
+  const router = useRouter()
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!acceptTerms) return
+    if (!acceptTerms) {
+      toast({
+        title: "Error",
+        description: "Please accept the terms and conditions",
+        variant: "destructive"
+      })
+      return
+    }
 
     setIsLoading(true)
-    // TODO: Integrate with Supabase auth
-    // const { data, error } = await supabase.auth.signUp({
-    //   email,
-    //   password,
-    //   options: {
-    //     data: {
-    //       business_name: businessName,
-    //       full_name: fullName,
-    //     }
-    //   }
-    // })
+    
+    try {
+      // Sign up with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            business_name: formData.businessName,
+            full_name: formData.fullName,
+          }
+        }
+      })
 
-    // For now, redirect to onboarding
-    setTimeout(() => {
+      if (error) throw error
+
+      if (data.user) {
+        // Create user profile
+        const subdomain = formData.businessName.toLowerCase().replace(/[^a-z0-9]/g, "-")
+        
+        const { error: profileError } = await supabase
+          .from("users")
+          .insert([{
+            id: data.user.id,
+            email: formData.email,
+            business_name: formData.businessName,
+            full_name: formData.fullName,
+            subdomain: subdomain
+          }])
+
+        if (profileError) throw profileError
+
+        toast({
+          title: "Success!",
+          description: "Account created successfully"
+        })
+        
+        router.push("/dashboard")
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      })
+    } finally {
       setIsLoading(false)
-      window.location.href = "/onboarding"
-    }, 1000)
+    }
   }
 
   const handleGoogleSignUp = async () => {
@@ -92,23 +141,36 @@ export default function SignUpPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="Jane" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Doe" required />
-              </div>
-            </div>
             <div className="space-y-2">
               <Label htmlFor="businessName">Business Name</Label>
-              <Input id="businessName" placeholder="Jane's Beauty Studio" required />
+              <Input 
+                id="businessName" 
+                placeholder="Jane's Beauty Studio" 
+                value={formData.businessName}
+                onChange={(e) => setFormData({...formData, businessName: e.target.value})}
+                required 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input 
+                id="fullName" 
+                placeholder="Jane Doe" 
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="jane@example.com" required />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="jane@example.com" 
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -117,6 +179,8 @@ export default function SignUpPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a strong password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                   required
                 />
                 <Button
