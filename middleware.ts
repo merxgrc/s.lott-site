@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
   const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000"
 
   // If it's the main domain, continue normally
-  if (hostname === mainDomain || hostname.includes("localhost")) {
+  if (hostname === mainDomain || hostname.includes("localhost") || hostname.includes("vercel.app")) {
     return NextResponse.next()
   }
 
