@@ -13,6 +13,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface Service {
   name: string
@@ -82,6 +83,7 @@ export default function SiteBuilderPage() {
 
   const [activeTab, setActiveTab] = useState("content")
   const [previewMode, setPreviewMode] = useState(false)
+  const [userSite, setUserSite] = useState<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -104,6 +106,7 @@ export default function SiteBuilderPage() {
         if (siteError && siteError.code !== "PGRST116") throw siteError // PGRST116 is "no rows returned"
 
         if (site) {
+          setUserSite(site)
           setSiteData({
             ...site.site_data,
             isPublished: site.is_published,
@@ -481,6 +484,20 @@ export default function SiteBuilderPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Site Builder</h1>
             <p className="text-gray-600">Customize your website content and design</p>
+            {userSite && userSite.subdomain && (
+              <p className="text-sm text-green-600 mt-1">
+                Your site: {userSite.subdomain}.{process.env.NEXT_PUBLIC_MAIN_DOMAIN}
+                {userSite.is_published && (
+                  <Link 
+                    href={`https://${userSite.subdomain}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN}`}
+                    target="_blank"
+                    className="ml-2 text-blue-600 hover:text-blue-700"
+                  >
+                    View Live →
+                  </Link>
+                )}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Badge variant={siteData.isPublished ? "default" : "secondary"}>

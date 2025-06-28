@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +9,7 @@ import { Calendar, Camera, Globe, Plus, Settings, Users, Eye, Edit } from "lucid
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { BarChart3 } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 interface Booking {
   id: number
@@ -20,7 +21,47 @@ interface Booking {
 }
 
 export default function DashboardPage() {
-  const [siteStatus, setSiteStatus] = useState("published") // published, draft, unpublished
+  const [siteStatus, setSiteStatus] = useState("draft") // published, draft, unpublished
+  const [userSite, setUserSite] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUserSite = async () => {
+      try {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError) throw userError
+        if (!user) return
+
+        // Get user's site
+        const { data: site, error: siteError } = await supabase
+          .from("sites")
+          .select("*")
+          .eq("user_id", user.id)
+          .single()
+
+        if (siteError && siteError.code !== "PGRST116") throw siteError
+        
+        if (site) {
+          setUserSite(site)
+          setSiteStatus(site.is_published ? "published" : "draft")
+        }
+      } catch (error) {
+        console.error("Error fetching site:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUserSite()
+  }, [])
+
+  const getPreviewUrl = () => {
+    if (userSite && userSite.subdomain) {
+      return `https://${userSite.subdomain}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN}`
+    }
+    return "/sites/preview" // Fallback
+  }
 
   // Real user stats - starts empty for new users
   const stats = {
@@ -46,17 +87,24 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Badge
               variant={siteStatus === "published" ? "default" : "secondary"}
-              className="bg-green-100 text-green-800"
+              className={siteStatus === "published" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
             >
               <Globe className="w-3 h-3 mr-1" />
               {siteStatus === "published" ? "Live" : "Draft"}
             </Badge>
-            <Link href="/sites/preview" target="_blank">
-              <Button variant="outline" size="sm">
+            {userSite ? (
+              <Link href={getPreviewUrl()} target="_blank">
+                <Button variant="outline" size="sm">
+                  <Eye className="w-4 h-4 mr-2" />
+                  {siteStatus === "published" ? "View Live Site" : "Preview Site"}
+                </Button>
+              </Link>
+            ) : (
+              <Button variant="outline" size="sm" disabled>
                 <Eye className="w-4 h-4 mr-2" />
-                Preview Site
+                Create Site First
               </Button>
-            </Link>
+            )}
             <Link href="/dashboard/site-builder">
               <Button size="sm" className="bg-pink-600 hover:bg-pink-700">
                 <Edit className="w-4 h-4 mr-2" />
