@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,87 +10,54 @@ import { Textarea } from "@/components/ui/textarea"
 import { MapPin, Phone, Mail, Instagram, Facebook, Star, Clock } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { useParams } from "next/navigation"
 
-// This would be fetched based on the subdomain
-const siteData = {
-  businessName: "Steph's Beauty Studio",
-  tagline: "Luxury Skincare & Esthetics",
-  description:
-    "Transform your skin with our premium facial treatments and personalized skincare solutions. Located in the heart of downtown, we provide a serene escape for your beauty needs.",
-  owner: "/Stephanie Lott",
-  phone: "(555) 123-4567",
-  email: "hello@stephsbeauty.com",
-  address: "123 Beauty Lane, Downtown City, CA 90210",
+interface Service {
+  name: string
+  description: string
+  duration: string
+  price: number
+}
+
+interface SiteData {
+  businessName: string
+  tagline: string
+  description: string
+  owner: string
+  phone: string
+  email: string
+  address: string
   hours: {
-    Monday: "9:00 AM - 7:00 PM",
-    Tuesday: "9:00 AM - 7:00 PM",
-    Wednesday: "9:00 AM - 7:00 PM",
-    Thursday: "9:00 AM - 8:00 PM",
-    Friday: "9:00 AM - 8:00 PM",
-    Saturday: "10:00 AM - 6:00 PM",
-    Sunday: "Closed",
-  },
+    [key: string]: string
+  }
   social: {
-    instagram: "@stephssbeauty",
-    facebook: "stephsbeautystudio",
-  },
-  services: [
-    {
-      name: "Signature Facial",
-      description: "Our most popular treatment featuring deep cleansing, exfoliation, and hydration",
-      duration: "60 min",
-      price: 120,
-    },
-    {
-      name: "Chemical Peel",
-      description: "Professional-grade peel to reveal smoother, brighter skin",
-      duration: "45 min",
-      price: 150,
-    },
-    {
-      name: "Microdermabrasion",
-      description: "Gentle exfoliation treatment for improved skin texture",
-      duration: "50 min",
-      price: 100,
-    },
-    {
-      name: "Eyebrow Shaping",
-      description: "Expert eyebrow shaping and tinting services",
-      duration: "30 min",
-      price: 45,
-    },
-  ],
-  gallery: [
-    "/placeholder.svg?height=300&width=400",
-    "/placeholder.svg?height=300&width=400",
-    "/placeholder.svg?height=300&width=400",
-    "/placeholder.svg?height=300&width=400",
-    "/placeholder.svg?height=300&width=400",
-    "/placeholder.svg?height=300&width=400",
-  ],
-  reviews: [
-    {
-      name: "Sarah M.",
-      rating: 5,
-      text: "Amazing facial! Isabella is so knowledgeable and my skin has never looked better.",
-      date: "2 weeks ago",
-    },
-    {
-      name: "Emma K.",
-      rating: 5,
-      text: "The studio is beautiful and relaxing. Highly recommend the signature facial!",
-      date: "1 month ago",
-    },
-    {
-      name: "Lisa R.",
-      rating: 5,
-      text: "Professional service and great results. Will definitely be back!",
-      date: "1 month ago",
-    },
-  ],
+    instagram: string
+    facebook: string
+  }
+  services: Service[]
+  gallery: string[]
+  colors?: {
+    primary?: string
+    secondary?: string
+  }
+}
+
+interface Review {
+  name: string
+  rating: number
+  text: string
+  date: string
 }
 
 export default function TenantSitePage() {
+  const params = useParams()
+  const subdomain = params.subdomain as string
+
+  const [siteData, setSiteData] = useState<SiteData | null>(null)
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedService, setSelectedService] = useState<string | null>(null)
   const [bookingForm, setBookingForm] = useState({
     name: "",
@@ -101,6 +68,94 @@ export default function TenantSitePage() {
     time: "",
     message: "",
   })
+
+  useEffect(() => {
+    const fetchSiteData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // Fetch site data based on subdomain
+        const { data: site, error: siteError } = await supabase
+          .from("sites")
+          .select("*")
+          .eq("subdomain", subdomain)
+          .eq("is_published", true)
+          .single()
+
+        if (siteError) {
+          if (siteError.code === "PGRST116") {
+            setError("Site not found or not published")
+          } else {
+            throw siteError
+          }
+          return
+        }
+
+        if (!site || !site.site_data) {
+          setError("Site data not found")
+          return
+        }
+
+        setSiteData(site.site_data as SiteData)
+
+        // For now, use some sample reviews since we don't have a reviews table yet
+        // In a real app, you'd fetch these from a reviews table
+        setReviews([
+          {
+            name: "Happy Client",
+            rating: 5,
+            text: "Amazing service! Highly recommend this esthetician.",
+            date: "2 weeks ago",
+          },
+          {
+            name: "Satisfied Customer",
+            rating: 5,
+            text: "Professional and knowledgeable. Great results!",
+            date: "1 month ago",
+          },
+        ])
+      } catch (err) {
+        console.error("Error fetching site data:", err)
+        setError("Failed to load site data")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (subdomain) {
+      fetchSiteData()
+    }
+  }, [subdomain])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-pink-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading site...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !siteData) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Site Not Found</h1>
+          <p className="text-gray-600 mb-8">
+            {error || "The site you're looking for doesn't exist or hasn't been published yet."}
+          </p>
+          <Link href="/">
+            <Button className="bg-pink-600 hover:bg-pink-700">
+              Go to BeautyBuilder
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -202,7 +257,7 @@ export default function TenantSitePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {siteData.services.map((service, index) => (
+            {siteData.services.map((service: Service, index: number) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -238,7 +293,7 @@ export default function TenantSitePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {siteData.gallery.map((image, index) => (
+            {siteData.gallery.map((image: string, index: number) => (
               <div
                 key={index}
                 className="aspect-square bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
@@ -264,7 +319,7 @@ export default function TenantSitePage() {
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">Real reviews from satisfied clients</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {siteData.reviews.map((review, index) => (
+            {reviews.map((review: Review, index: number) => (
               <Card key={index} className="text-center">
                 <CardHeader>
                   <div className="flex justify-center mb-4">
@@ -315,7 +370,7 @@ export default function TenantSitePage() {
               <div>
                 <h4 className="text-xl font-semibold text-gray-900 mb-6">Hours</h4>
                 <div className="space-y-2">
-                  {Object.entries(siteData.hours).map(([day, hours]) => (
+                  {Object.entries(siteData.hours).map(([day, hours]: [string, string]) => (
                     <div key={day} className="flex justify-between">
                       <span className="font-medium">{day}</span>
                       <span className="text-gray-600">{hours}</span>

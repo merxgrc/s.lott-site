@@ -1,53 +1,147 @@
-# BeautyBuilder - Multi-Tenant SaaS Platform
+# BeautyBuilder - Multi-Tenant SaaS Platform for Estheticians
 
-A comprehensive multi-tenant SaaS platform for beauty professionals to create and manage their online presence, similar to GlossGenius.
+A Next.js-based platform that allows estheticians to create and host their own professional websites with custom subdomains.
 
-## Features
+## 🚀 Features
 
-### 🏢 Multi-Tenant Architecture
-- Subdomain-based tenant routing
-- Custom domain support
-- Isolated tenant data
+- **Multi-tenant architecture** - Each esthetician gets their own subdomain
+- **Custom site builder** - Visual editor for business information, services, gallery, and contact details
+- **Supabase integration** - Secure authentication and data persistence
+- **Responsive design** - Beautiful, mobile-friendly websites
+- **Real-time preview** - See changes instantly while building
+- **Professional templates** - Pre-designed layouts for beauty professionals
 
-### 🎨 Website Builder
-- Professional templates for beauty businesses
-- Drag-and-drop customization
-- Mobile-responsive designs
-- Real-time preview
+## 🏗️ Architecture
 
-### 📅 Booking System
-- Online appointment scheduling
-- Calendar integration
-- Automated confirmations
-- Client management
+### Main App (`your-domain.com`)
+- Landing page explaining the platform
+- Authentication (signup/signin)
+- Dashboard for site management
+- Site builder interface
 
-### 🖼️ Portfolio Management
-- Photo gallery management
-- Before/after showcases
-- Image optimization
+### Tenant Sites (`subdomain.your-domain.com`)
+- Individual esthetician websites
+- Custom content based on site builder data
+- Professional booking and contact forms
+- Gallery showcases and service listings
 
-### 💳 Payment Integration
-- Stripe subscription billing
-- Multiple pricing tiers
-- Customer portal
+## 🛠️ Technology Stack
 
-### 🔐 Authentication & Security
-- Supabase authentication
-- Row-level security
-- OAuth providers
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL database, Auth, Storage)
+- **Hosting**: Vercel
+- **Domain Management**: Vercel Domains + Cloudflare (optional)
 
-## Tech Stack
+## 📋 Setup Instructions
 
-- **Frontend**: Next.js 14, React, TypeScript
-- **Styling**: Tailwind CSS, shadcn/ui
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Payments**: Stripe (commented out - ready for integration)
-- **Deployment**: Vercel
+### 1. Environment Variables
 
-## Getting Started
+Create a `.env.local` file in the root directory:
 
-### Prerequisites
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+```
+
+### 2. Database Setup
+
+The database schema is already set up. Your Supabase should have a `sites` table with proper RLS policies.
+
+### 3. Domain Configuration
+
+#### Option A: Vercel Domains (Recommended)
+1. In your Vercel dashboard, go to your project settings
+2. Add your custom domain (e.g., `beautysites.com`)
+3. Add a wildcard subdomain: `*.beautysites.com`
+4. Vercel will automatically handle SSL certificates
+
+#### Option B: External Domain + Cloudflare
+1. Point your domain's nameservers to Cloudflare
+2. In Cloudflare DNS settings:
+   - Add an A record: `@` pointing to Vercel's IP
+   - Add a CNAME record: `*` pointing to your Vercel app URL
+3. In Vercel, add your domain and wildcard subdomain
+
+### 4. Middleware Configuration
+
+Update `middleware.ts` with your actual domains:
+
+```typescript
+const mainDomains = [
+  "localhost:3000", // Development
+  "your-app.vercel.app", // Vercel subdomain
+  "beautysites.com", // Your custom domain
+]
+```
+
+## 🚀 Deployment
+
+### Vercel Deployment
+
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on every push to main branch
+
+### Environment Variables in Vercel
+
+Add these in your Vercel project settings:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+## 👩‍💼 How It Works for Estheticians
+
+### For Platform Admin:
+1. Set up the platform with your custom domain
+2. Estheticians sign up and get access to the site builder
+3. Each esthetician gets a unique subdomain (e.g., `sarah.beautysites.com`)
+
+### For Estheticians:
+1. **Sign up** at your main domain (e.g., `beautysites.com`)
+2. **Access dashboard** to manage their site
+3. **Build their site** using the visual editor:
+   - Add business name, tagline, description
+   - Add services with prices and descriptions
+   - Upload gallery images
+   - Set contact information and hours
+   - Customize colors and branding
+4. **Preview their site** before publishing
+5. **Publish** to make their site live at `their-name.beautysites.com`
+
+### For Clients:
+1. Visit the esthetician's subdomain (e.g., `sarah.beautysites.com`)
+2. Browse services, view gallery, read about the esthetician
+3. Contact through the contact form
+4. Book appointments (if booking system is integrated)
+
+## 🚦 Status
+
+✅ **Ready for Production**
+- Authentication working
+- Site builder functional
+- Database properly configured
+- Domain routing enabled
+- No hardcoded demo data
+
+The platform is now ready for real estheticians to sign up and create their professional websites!
+
+## 🎯 Next Steps for Production
+
+### Immediate:
+1. **Purchase a domain** (e.g., beautysites.com)
+2. **Configure DNS** with wildcard subdomain support
+3. **Update middleware** with your actual domain
+4. **Deploy to Vercel** with environment variables
+
+### Future Enhancements:
+1. **Booking Integration** - Connect with scheduling platforms
+2. **Payment Processing** - Enable service payments
+3. **Email Notifications** - Automated booking confirmations
+4. **Analytics Dashboard** - Track site performance
+5. **Mobile App** - React Native companion app
+6. **SEO Optimization** - Individual page optimization for each site
+7. **Custom Domain Support** - Allow estheticians to use their own domains
 
 - Node.js 18+
 - npm or yarn

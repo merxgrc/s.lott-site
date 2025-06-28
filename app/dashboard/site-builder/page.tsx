@@ -20,45 +20,33 @@ export default function SiteBuilderPage() {
   const { toast } = useToast()
   const router = useRouter()
   const [siteData, setSiteData] = useState({
-    businessName: "Steph's Beauty Studio",
-    tagline: "Luxury Skincare & Esthetics",
-    description: "Transform your skin with our premium facial treatments and personalized skincare solutions.",
-    owner: "Stephanie Lott",
-    phone: "(555) 123-4567",
-    email: "hello@stephsbeauty.com",
-    address: "123 Beauty Lane, Downtown City, CA 90210",
+    businessName: "",
+    tagline: "",
+    description: "",
+    owner: "",
+    phone: "",
+    email: "",
+    address: "",
     hours: {
-      Monday: "9:00 AM - 7:00 PM",
-      Tuesday: "9:00 AM - 7:00 PM",
-      Wednesday: "9:00 AM - 7:00 PM",
-      Thursday: "9:00 AM - 8:00 PM",
-      Friday: "9:00 AM - 8:00 PM",
-      Saturday: "10:00 AM - 6:00 PM",
+      Monday: "9:00 AM - 6:00 PM",
+      Tuesday: "9:00 AM - 6:00 PM", 
+      Wednesday: "9:00 AM - 6:00 PM",
+      Thursday: "9:00 AM - 6:00 PM",
+      Friday: "9:00 AM - 6:00 PM",
+      Saturday: "10:00 AM - 4:00 PM",
       Sunday: "Closed",
     },
-    services: [
-      {
-        name: "Signature Facial",
-        description: "Our most popular treatment featuring deep cleansing, exfoliation, and hydration",
-        duration: "60 min",
-        price: 120,
-      },
-      {
-        name: "Chemical Peel",
-        description: "Professional-grade peel to reveal smoother, brighter skin",
-        duration: "45 min",
-        price: 150,
-      },
-    ],
+    services: [],
     social: {
-      instagram: "@bellasbeauty",
-      facebook: "bellasbeautystudio",
+      instagram: "",
+      facebook: "",
     },
     colors: {
       primary: "#ec4899", // pink-500
       secondary: "#8b5cf6", // violet-500
     },
-    isPublished: true,
+    gallery: [],
+    isPublished: false,
   })
 
   const [activeTab, setActiveTab] = useState("content")
