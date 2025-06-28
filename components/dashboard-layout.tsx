@@ -152,7 +152,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <SidebarMenuItem>
                 <SidebarMenuButton size="sm" asChild>
                   <Link 
-                    href={`https://${userSite.subdomain}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN}`}
+                    href={`/sites/${userSite.subdomain}`}
                     target="_blank"
                     className="text-green-600 hover:text-green-700"
                   >

@@ -58,7 +58,8 @@ export default function DashboardPage() {
 
   const getPreviewUrl = () => {
     if (userSite && userSite.subdomain) {
-      return `https://${userSite.subdomain}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN}`
+      // Use direct route instead of subdomain for Vercel testing
+      return `/sites/${userSite.subdomain}`
     }
     return "/sites/preview" // Fallback
   }

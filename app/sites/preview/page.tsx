@@ -32,8 +32,8 @@ export default function PreviewSitePage() {
         }
 
         if (site.subdomain) {
-          // Redirect to actual user site
-          window.location.href = `https://${site.subdomain}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN}`
+          // Redirect to actual user site using direct route
+          window.location.href = `/sites/${site.subdomain}`
         } else {
           // No subdomain, redirect to site builder
           router.push("/dashboard/site-builder")

@@ -486,10 +486,10 @@ export default function SiteBuilderPage() {
             <p className="text-gray-600">Customize your website content and design</p>
             {userSite && userSite.subdomain && (
               <p className="text-sm text-green-600 mt-1">
-                Your site: {userSite.subdomain}.{process.env.NEXT_PUBLIC_MAIN_DOMAIN}
+                Your site: {process.env.NEXT_PUBLIC_MAIN_DOMAIN}/sites/{userSite.subdomain}
                 {userSite.is_published && (
                   <Link 
-                    href={`https://${userSite.subdomain}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN}`}
+                    href={`/sites/${userSite.subdomain}`}
                     target="_blank"
                     className="ml-2 text-blue-600 hover:text-blue-700"
                   >
