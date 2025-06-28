@@ -35,8 +35,8 @@ interface SiteData {
     instagram: string
     facebook: string
   }
-  services: Service[]
-  gallery: string[]
+  services?: Service[] // Made optional since it might not always be present
+  gallery?: string[] // Made optional since it might not always be present
   colors?: {
     primary?: string
     secondary?: string
@@ -257,7 +257,7 @@ export default function TenantSitePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {siteData.services.map((service: Service, index: number) => (
+            {(siteData.services || []).map((service: Service, index: number) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -293,7 +293,7 @@ export default function TenantSitePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {siteData.gallery.map((image: string, index: number) => (
+            {(siteData.gallery || []).map((image: string, index: number) => (
               <div
                 key={index}
                 className="aspect-square bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"

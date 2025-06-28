@@ -107,10 +107,11 @@ export default function SiteBuilderPage() {
 
         if (site) {
           setUserSite(site)
-          setSiteData({
-            ...site.site_data,
+          setSiteData(prevState => ({
+            ...prevState, // Keep default values
+            ...site.site_data, // Override with database values
             isPublished: site.is_published,
-          })
+          }))
         }
       } catch (error) {
         console.error("Error loading site data:", error)
