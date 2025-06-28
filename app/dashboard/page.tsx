@@ -10,35 +10,28 @@ import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { BarChart3 } from "lucide-react"
 
+interface Booking {
+  id: number
+  client: string
+  service: string
+  date: string
+  time: string
+  status: string
+}
+
 export default function DashboardPage() {
   const [siteStatus, setSiteStatus] = useState("published") // published, draft, unpublished
 
-  // Mock data - replace with real data from your backend
+  // Real user stats - starts empty for new users
   const stats = {
-    totalBookings: 24,
-    monthlyRevenue: 3200,
-    websiteViews: 1250,
-    newClients: 8,
+    totalBookings: 0,
+    monthlyRevenue: 0,
+    websiteViews: 0,
+    newClients: 0,
   }
 
-  const recentBookings = [
-    {
-      id: 1,
-      client: "Sarah Johnson",
-      service: "Facial Treatment",
-      date: "2024-01-15",
-      time: "2:00 PM",
-      status: "confirmed",
-    },
-    { id: 2, client: "Emma Davis", service: "Eyebrow Shaping", date: "2024-01-15", time: "3:30 PM", status: "pending" },
-    {
-      id: 3,
-      client: "Lisa Wilson",
-      service: "Chemical Peel",
-      date: "2024-01-16",
-      time: "10:00 AM",
-      status: "confirmed",
-    },
+  const recentBookings: Booking[] = [
+    // Empty array for new users - will be populated when they get real bookings
   ]
 
   return (
@@ -82,7 +75,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalBookings}</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
+              <p className="text-xs text-muted-foreground">Start booking clients to see growth!</p>
             </CardContent>
           </Card>
           <Card>
@@ -92,7 +85,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">${stats.monthlyRevenue}</div>
-              <p className="text-xs text-muted-foreground">+8% from last month</p>
+              <p className="text-xs text-muted-foreground">Revenue will appear as you serve clients</p>
             </CardContent>
           </Card>
           <Card>
@@ -102,7 +95,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.websiteViews}</div>
-              <p className="text-xs text-muted-foreground">+23% from last month</p>
+              <p className="text-xs text-muted-foreground">Publish your site to start tracking views</p>
             </CardContent>
           </Card>
           <Card>
@@ -112,7 +105,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.newClients}</div>
-              <p className="text-xs text-muted-foreground">+4 this week</p>
+              <p className="text-xs text-muted-foreground">New client acquisitions this month</p>
             </CardContent>
           </Card>
         </div>
@@ -136,20 +129,28 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentBookings.map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{booking.client}</p>
-                          <p className="text-sm text-gray-600">{booking.service}</p>
-                          <p className="text-xs text-gray-500">
-                            {booking.date} at {booking.time}
-                          </p>
+                    {recentBookings.length > 0 ? (
+                      recentBookings.map((booking) => (
+                        <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <p className="font-medium">{booking.client}</p>
+                            <p className="text-sm text-gray-600">{booking.service}</p>
+                            <p className="text-xs text-gray-500">
+                              {booking.date} at {booking.time}
+                            </p>
+                          </div>
+                          <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
+                            {booking.status}
+                          </Badge>
                         </div>
-                        <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
-                          {booking.status}
-                        </Badge>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm">No bookings yet</p>
+                        <p className="text-xs">Your upcoming appointments will appear here</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                   <Link href="/dashboard/bookings">
                     <Button variant="outline" className="w-full mt-4">

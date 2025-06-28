@@ -14,12 +14,43 @@ import { supabase } from "@/lib/supabase"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 
+interface Service {
+  name: string
+  description: string
+  duration: string
+  price: number
+}
+
+interface SiteData {
+  businessName: string
+  tagline: string
+  description: string
+  owner: string
+  phone: string
+  email: string
+  address: string
+  hours: {
+    [key: string]: string
+  }
+  services: Service[]
+  social: {
+    instagram: string
+    facebook: string
+  }
+  colors: {
+    primary: string
+    secondary: string
+  }
+  gallery: string[]
+  isPublished: boolean
+}
+
 export default function SiteBuilderPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
-  const [siteData, setSiteData] = useState({
+  const [siteData, setSiteData] = useState<SiteData>({
     businessName: "",
     tagline: "",
     description: "",
@@ -28,13 +59,13 @@ export default function SiteBuilderPage() {
     email: "",
     address: "",
     hours: {
-      Monday: "9:00 AM - 6:00 PM",
-      Tuesday: "9:00 AM - 6:00 PM", 
-      Wednesday: "9:00 AM - 6:00 PM",
-      Thursday: "9:00 AM - 6:00 PM",
-      Friday: "9:00 AM - 6:00 PM",
-      Saturday: "10:00 AM - 4:00 PM",
-      Sunday: "Closed",
+      Monday: "",
+      Tuesday: "", 
+      Wednesday: "",
+      Thursday: "",
+      Friday: "",
+      Saturday: "",
+      Sunday: "",
     },
     services: [],
     social: {
@@ -42,8 +73,8 @@ export default function SiteBuilderPage() {
       facebook: "",
     },
     colors: {
-      primary: "#ec4899", // pink-500
-      secondary: "#8b5cf6", // violet-500
+      primary: "#ec4899", // Default pink, but user can change
+      secondary: "#8b5cf6", // Default violet, but user can change
     },
     gallery: [],
     isPublished: false,
