@@ -8,8 +8,8 @@ export function middleware(request: NextRequest) {
   // List of main domains (add your production domain here)
   const mainDomains = [
     "localhost:3000",
-    "your-main-domain.vercel.app", // Replace with your actual Vercel domain
-    "your-custom-domain.com", // Replace with your custom domain if you have one
+    "s-lott-site-kqn3.vercel.app", // Your actual Vercel domain
+    "beautybuilder.vercel.app", // Your main domain from env
   ]
   
   // Check if it's a main domain (not a subdomain)
