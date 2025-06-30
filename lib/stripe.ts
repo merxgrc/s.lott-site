@@ -1,5 +1,4 @@
 // STRIPE INTEGRATION - COMMENTED OUT FOR NOW
-// Uncomment and configure when ready to add payments
 
 /*
 // Stripe configuration for payments
